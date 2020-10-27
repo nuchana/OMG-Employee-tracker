@@ -75,34 +75,40 @@ function createTracker() {
 }
 
 function viewAllemployees() {
-    connection.query("SELECT * FROM employee"), function (err, res) {
+    connection.query("SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, CONCAT (m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC"
+        , function (err, res) {
+            if (err) throw err;
+            console.log("\n");
+            // Display query results using res.table
+            console.table(res);
+
+            // back to create tracker
+            createTracker();
+
+        });
+}
+
+function viewDepts() {
+   
+    connection.query("SELECT * FROM department", function (err, res) {
+   
         if (err) throw err;
         console.table(res);
         createTracker();
-
-    }
+    });
 
 }
 
-// function viewAllemployees() {
-//     connection.query("SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, CONCAT (m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC"
-//         , function (err, res) {
-//             if (err) throw err;
-//             console.log("\n");
-//             // Display query results using res.table
-//             console.table(res);
+function viewRoles() {
+   
+    connection.query("SELECT * FROM role ORDER BY salary DESC", function (err, res) {
+   
+        if (err) throw err;
+        console.table(res);
+        createTracker();
+    });
 
-//             // back to create tracker
-//             createTracker();
-
-//         });
-// }
-
-// function viewDepts() {
-//     connection.query("SELECT department.name FROM department")
-
-
-// }
+}
 
 
 
