@@ -1,4 +1,4 @@
-USE employeeDB;
+USE employeedb;
 
 ----- Department Seeds -----
 
