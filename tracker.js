@@ -1,5 +1,7 @@
-var mysql = require("mysql");
-var inquirer = require("inquirer");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
+// const consoleTable = require("console.table");
+// const promisemysql = require("promise-mysql");
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -17,106 +19,74 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
-    console.log("connected as id " + connection.threadId + "\n");
+    console.log("\n Welcome to OMG Employee Tracker \n");
     createTracker();
 });
 
 function createTracker() {
     inquirer
         .prompt({
-            name: "addOrViewOrUpdate",
+            name: "action",
             type: "list",
             message: "What would you like to do?",
             choices: [
+                "VIEW all employees", "VIEW departments", "VIEW roles",
                 "ADD departments", "ADD roles", "ADD employees",
-                "VIEW departments", "VIEW roles", "VIEW employees",
                 "UPDATE employee roles",
-                "EXIT"]
+                "EXIT"
+            ]
         })
-        .then(function (answer) {
-            // based on their answer, either call the bid or the post functions
-            if (answer.addOrViewOrUpdate === "VIEW all") {
-                viewAll(); 
-            }
-            else if (answer.addOrViewOrUpdate === "ADD employees") {
-                addEmployee();
+        .then(userChoice => {
+            switch (userChoice.action) {
+                case "VIEW all employees":
+                    viewAllemployees();
+                    break;
 
-            }
-            else if (answer.addOrViewOrUpdate === "UPDATE emplyee roles") {
-                updateEmployeeRoles();
-            }
+                case "VIEW departments":
+                    viewDepts();
+                    break;
 
-            else {
-                connection.end();
+                case "VIEW roles":
+                    viewRoles();
+                    break;
+
+                case "ADD employee":
+                    addEmployee();
+                    break;
+
+                case "ADD department":
+                    addDept();
+                    break;
+
+                case "ADD roles":
+                    addRoles();
+                    break;
+
+                case "UPDATE employee roles":
+                    updateRoles();
+                    break;
+
+                default: "EXIT"
+                    connection.end();
+
             }
         });
 
-function viewAll() {
-    connection.query("SELECT * FROM department", "SELECT * FROM role", "SELECT * employee", function (err, res) {
-        if (err) throw err;
-        console.table(res);
-        
-    });
+}
+function viewAllemployees() {
+    connection.query("SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, CONCAT (m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC"
+        , function (err, res) {
+            if (err) throw err;
+            console.log("\n");
+            // Display query results using res.table
+            console.table(res);
+
+            // back to create tracker
+            createTracker();
+
+        });
 }
 
-//     SELECT * FROM authors;
-// SELECT * FROM books;
-
-// -- show ALL books with authors
-// -- INNER JOIN will only return all matching values from both tables
-// SELECT title, firstName, lastName
-// FROM books
-// INNER JOIN authors ON books.authorId = authors.id;
-
-//     function addEmployee() {
-//         // prompt for info about the item being put up for auction
-//         inquirer
-//             .prompt([
-//                 {
-//                     first_name: "first name",
-//                     type: "input",
-//                     message: "What is employee's first name?"
-//                 },
-
-//                 {
-//                     last_name: "last name",
-//                     type: "input",
-//                     message: "What is employee's last name?"
-//                 },
-//                 {
-//                     name: "role",
-//                     type: "input",
-//                     message: "What is employee's role?"
-//                 },
-
-//                 {
-//                     name: "manager",
-//                     type: "input",
-//                     message: "Who is employee's manager?"
-//                 },
-
-//             ])
-//             .then(function (answer) {
-//                 // when finished prompting, insert a new item into the db with that info
-//                 connection.query(
-//                     "INSERT INTO employee SET ?",
-//                     {
-//                         first_name: answer.first_name,
-//                         last_name: answer.last_name,
-//                         role_id: answer.category,
-//                         starting_bid: answer.startingBid || 0,
-//                         highest_bid: answer.startingBid || 0
-//                     },
-//                     function (err) {
-//                         if (err) throw err;
-//                         console.log("Your auction was created successfully!");
-//                         // re-prompt the user for if they want to bid or post
-//                         start();
-//                     }
-//                 );
-//             });
-//     }
-// }
 
 
 
