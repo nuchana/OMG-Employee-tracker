@@ -112,64 +112,117 @@ function viewRoles() {
 
 function addEmployee() {
 
-    connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, role.id, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
         if (err) throw err;
+        connection.query("SELECT role.id, role.title from role", (err, role) => {
+            if (err) throw err;
+            // console.log(role);
 
-        inquirer
-            .prompt([
-                {
-                    name: "first_name",
-                    type: "input",
-                    message: "What is employee's first name?"
-                },
-                {
-                    name: "last_name",
-                    type: "input",
-                    message: "What is employee's last name?"
-                },
-                {
-                    name: "role",
-                    type: "list",
-                    message: "What is employee's role?",
-                    choices: function () {
-                        console.log(results);
-
-                        let choiceArray = results.map(choice => choice.title);
-                        return choiceArray;
+            inquirer
+                .prompt([
+                    {
+                        name: "first_name",
+                        type: "input",
+                        message: "What is employee's first name?"
                     },
-                },
+                    {
+                        name: "last_name",
+                        type: "input",
+                        message: "What is employee's last name?"
+                    },
+                    {
+                        name: "role",
+                        type: "list",
+                        message: "What is employee's roleID?",
+                        choices: function () {
+                            // console.log(results);
 
-
-                {
-                    name: "manager",
-                    type: 'list',
-                    message: "Who is employee's manager?",
-                    choices: function () {
-                        let managerArray = results.map(manager => manager.full_name);
-                        return managerArray;
+                            let choiceArray = role.map(role => role.id);
+                            return choiceArray;
+                        },
                     },
 
-                }
+                    {
+                        name: "manager",
+                        type: 'list',
+                        message: "Who is employee's managerID?",
+                        choices: function () {
+                            let managerArray = results.map(employee => employee.id);
+                            return managerArray;
+                        },
 
-            ])
-            .then(function (answer) {
-                // when finished prompting, insert a new item into the db with that info
-                console.log(answer);
-                connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID})`, (err) => {
-                    if (err) return err;
+                    }
 
-                    // Confirm employee has been added
-                    console.log(`\n EMPLOYEE ${answer.firstName} ${answer.lastName} ADDED...\n `);
-                    createTracker();
+                ])
+                .then(function (answer) {
+                    // when finished prompting, insert a new item into the db with that info
+                    console.log(answer);
+                    connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                    VALUES ("${answer.first_name}", "${answer.last_name}", "${answer.role}", "${answer.manager}")`, (err) => {
+                        if (err) console.log(err);
+
+                        // Confirm employee has been added
+                        console.log(`\n EMPLOYEE ${answer.first_name}, ${answer.last_name} ADDED...\n `);
+                        createTracker();
+                    });
+
                 });
 
+        })
 
-            });
     });
 
 }
 
+function updateRoles() {
+    connection.query("SELECT employee.id employee.first_name, employee.last_name, role.id, role.title FROM employee INNER JOIN role ON employee.role_id=role.id"
+        , (err, results) => {
+            if (err) throw err;
+
+            inquirer
+                .prompt([
+                    {
+                        name: "employeeID",
+                        type: "input",
+                        message: "What is employee's ID?",
+                        choices: function () {
+                            console.log(results);
+
+                            let choiceArray = results.map(employee => employee.id);
+                            return choiceArray;
+                        },
+                    },
+
+                    {
+                        name: "newRole",
+                        type: "list",
+                        message: "What is employee's role to be updated?",
+                        choices: function () {
+                            // console.log(results);
+
+                            let roleArray = results.map(role => role.title);
+                            return roleArray;
+                        },
+                    },
+
+
+                ])
+                .then(function (answer) {
+
+                    // console.log(answer);
+                    connection.query(`UPDATE employee 
+                    SET role_id = (SELECT id FROM role WHERE title = ? ) 
+                    WHERE id = (SELECT id FROM(SELECT id FROM employees WHERE CONCAT(first_name," ",last_name) = ?) AS full_name)`, [answer.newRole, answer.full_name], (err) => {
+                        if (err) throw err;
+                        createTracker();
+                    });
+
+
+                });
+        });
+
+
+}
 
 // Add department, roles, employees
 
