@@ -54,16 +54,13 @@ function createTracker() {
                     addEmployee();
                     break;
 
-                case "ADD department":
-                    addDept();
-                    break;
-
-                case "ADD roles":
-                    addRoles();
-                    break;
-
+                
                 case "UPDATE employee roles":
                     updateRoles();
+                    break;
+                
+                case "DELETE employee":
+                    deleteEmployee();
                     break;
 
                 default: "EXIT"
@@ -204,16 +201,18 @@ function updateRoles() {
                         },
                     },
 
-
-
                 ])
                 .then(function (answer) {
                     // when finished prompting, insert a new item into the db with that info
                     console.log(answer);
+                  
                     connection.query(
-                        "UPDATE employee SET role_id = (SELECT id FROM role WHERE title = ? ) WHERE id = (SELECT id FROM employee WHERE employee.first_name = ?)"
+                        `UPDATE employee 
+                        SET role_id = (SELECT id FROM role WHERE title = ? ) 
+                        WHERE id = (SELECT id FROM(SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ?) AS tmptable)`
                         , [answer.role, answer.employee], (err) => {
                         if (err) throw err;
+                      
 
                         // confirm update employee
                         console.log(`\n "${answer.employee}" ROLE UPDATED TO "${answer.role}"...\n `);
@@ -231,62 +230,71 @@ function updateRoles() {
 }
 
 
+function deleteEmployee() {
+    
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, role.id, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
+        if (err) throw err;
+        connection.query("SELECT role.id, role.title from role", (err, role) => {
+            if (err) throw err;
+            // console.log(role);
+            inquirer
+                .prompt([
+                    {
+                        name: "first_name",
+                        type: "input",
+                        message: "What is employee's first name?"
+                    },
+                    {
+                        name: "last_name",
+                        type: "input",
+                        message: "What is employee's last name?"
+                    },
+                    {
+                        name: "role",
+                        type: "list",
+                        message: "What is employee's roleID?",
+                        choices: function () {
+                            // console.log(results);
+                            let choiceArray = role.map(role => role.id);
+                            return choiceArray;
+                        },
+                    },
+
+                    {
+                        name: "manager",
+                        type: 'list',
+                        message: "Who is employee's managerID?",
+                        choices: function () {
+                            let managerArray = results.map(employee => employee.id);
+                            return managerArray;
+                        },
+
+                    }
+
+                ])
+                .then(function (answer) {
+                    // when finished prompting, insert a new item into the db with that info
+                    console.log(answer);
+                    connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                    VALUES ("${answer.first_name}", "${answer.last_name}", "${answer.role}", "${answer.manager}")`, (err) => {
+                        if (err) console.log(err);
+
+                        // Confirm employee has been added
+                        console.log(`\n EMPLOYEE ${answer.first_name}, ${answer.last_name} ADDED...\n `);
+                        createTracker();
+                    });
+
+                });
+
+        })
+
+    });
 
 
-// function updateRoles() {
-//     connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.id, role.title FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
-//         if (err) throw err;
-//         connection.query("SELECT role.id, role.title from role", (err, role) => {
-//             if (err) throw err;
 
-//             inquirer
-//                 .prompt([
-
-//                     {
-//                         name: "employee",
-//                         type: "input",
-//                         message: "What is employee's ID?",
-//                         choices: function () {
-//                             console.log(results);
-
-//                             let choiceArray = results.map(employee => employee.id);
-//                             return choiceArray;
-//                         },
-//                     },
-
-//                     {
-//                         name: "newRole",
-//                         type: "list",
-//                         message: "What is employee's role to be updated?",
-//                         choices: function () {
-//                             // console.log(role);
-
-//                             let roleArray = role.map(role => role.title);
-//                             return roleArray;
-//                         },
-//                     },
+}
 
 
-//                 ])
-//                 .then(function (answer) {
-
-//                     console.table(answer);
-//                     connection.query(
-//                         `UPDATE employee SET role.title = ${role} WHERE employee.id = ${employee.id}`, (err) => {
-//                             if (err) return err;
-
-//                             // confirm update employee
-//                             console.log(`\n ${answer.employee} ROLE UPDATED TO ${answer.role}...\n `);
-
-//                             // back to main menu
-//                             createTracker();
-
-//                         });
-
-
-//                 });
-//         });
-//     });
 
 
 
