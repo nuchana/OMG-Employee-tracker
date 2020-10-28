@@ -117,7 +117,6 @@ function addEmployee() {
         connection.query("SELECT role.id, role.title from role", (err, role) => {
             if (err) throw err;
             // console.log(role);
-
             inquirer
                 .prompt([
                     {
@@ -136,7 +135,6 @@ function addEmployee() {
                         message: "What is employee's roleID?",
                         choices: function () {
                             // console.log(results);
-
                             let choiceArray = role.map(role => role.id);
                             return choiceArray;
                         },
@@ -175,54 +173,124 @@ function addEmployee() {
 }
 
 function updateRoles() {
-    connection.query("SELECT employee.id employee.first_name, employee.last_name, role.id, role.title FROM employee INNER JOIN role ON employee.role_id=role.id"
-        , (err, results) => {
-            if (err) throw err;
 
+    connection.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee", (err, results) => {
+        if (err) throw err;
+        connection.query("SELECT role.id, role.title from role", (err, role) => {
+            if (err) throw err;
+            // console.log(role);
             inquirer
                 .prompt([
-                    {
-                        name: "employeeID",
-                        type: "input",
-                        message: "What is employee's ID?",
-                        choices: function () {
-                            console.log(results);
 
-                            let choiceArray = results.map(employee => employee.id);
-                            return choiceArray;
+                    {
+                        name: "employee",
+                        type: 'list',
+                        message: "Who is employee?",
+                        choices: function () {
+                            let employeeArray = results.map(employee => employee.full_name);
+                            return employeeArray;
                         },
+
                     },
 
                     {
-                        name: "newRole",
+                        name: "role",
                         type: "list",
                         message: "What is employee's role to be updated?",
                         choices: function () {
                             // console.log(results);
-
-                            let roleArray = results.map(role => role.title);
-                            return roleArray;
+                            let choiceArray = role.map(role => role.title);
+                            return choiceArray;
                         },
                     },
 
 
+
                 ])
                 .then(function (answer) {
-
-                    // console.log(answer);
-                    connection.query(`UPDATE employee 
-                    SET role_id = (SELECT id FROM role WHERE title = ? ) 
-                    WHERE id = (SELECT id FROM(SELECT id FROM employees WHERE CONCAT(first_name," ",last_name) = ?) AS full_name)`, [answer.newRole, answer.full_name], (err) => {
+                    // when finished prompting, insert a new item into the db with that info
+                    console.log(answer);
+                    connection.query(
+                        "UPDATE employee SET role_id = (SELECT id FROM role WHERE title = ? ) WHERE id = (SELECT id FROM employee WHERE employee.first_name = ?)"
+                        , [answer.role, answer.employee], (err) => {
                         if (err) throw err;
+
+                        // confirm update employee
+                        console.log(`\n "${answer.employee}" ROLE UPDATED TO "${answer.role}"...\n `);
+
+                        // back to main menu
                         createTracker();
                     });
-
-
                 });
+
+
         });
 
+    });
 
 }
+
+
+
+
+// function updateRoles() {
+//     connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.id, role.title FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
+//         if (err) throw err;
+//         connection.query("SELECT role.id, role.title from role", (err, role) => {
+//             if (err) throw err;
+
+//             inquirer
+//                 .prompt([
+
+//                     {
+//                         name: "employee",
+//                         type: "input",
+//                         message: "What is employee's ID?",
+//                         choices: function () {
+//                             console.log(results);
+
+//                             let choiceArray = results.map(employee => employee.id);
+//                             return choiceArray;
+//                         },
+//                     },
+
+//                     {
+//                         name: "newRole",
+//                         type: "list",
+//                         message: "What is employee's role to be updated?",
+//                         choices: function () {
+//                             // console.log(role);
+
+//                             let roleArray = role.map(role => role.title);
+//                             return roleArray;
+//                         },
+//                     },
+
+
+//                 ])
+//                 .then(function (answer) {
+
+//                     console.table(answer);
+//                     connection.query(
+//                         `UPDATE employee SET role.title = ${role} WHERE employee.id = ${employee.id}`, (err) => {
+//                             if (err) return err;
+
+//                             // confirm update employee
+//                             console.log(`\n ${answer.employee} ROLE UPDATED TO ${answer.role}...\n `);
+
+//                             // back to main menu
+//                             createTracker();
+
+//                         });
+
+
+//                 });
+//         });
+//     });
+
+
+
+// }
 
 // Add department, roles, employees
 
