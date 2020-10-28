@@ -31,7 +31,7 @@ function createTracker() {
             message: "What would you like to do?",
             choices: [
                 "VIEW all employees", "VIEW departments", "VIEW roles",
-                "ADD departments", "ADD roles", "ADD employees",
+                "ADD employee", "ADD department", "ADD role",
                 "UPDATE employee roles",
                 "EXIT"
             ]
@@ -89,9 +89,9 @@ function viewAllemployees() {
 }
 
 function viewDepts() {
-   
+
     connection.query("SELECT * FROM department", function (err, res) {
-   
+
         if (err) throw err;
         console.table(res);
         createTracker();
@@ -100,9 +100,9 @@ function viewDepts() {
 }
 
 function viewRoles() {
-   
+
     connection.query("SELECT * FROM role ORDER BY salary DESC", function (err, res) {
-   
+
         if (err) throw err;
         console.table(res);
         createTracker();
@@ -110,7 +110,62 @@ function viewRoles() {
 
 }
 
+function addEmployee() {
 
+    inquirer
+        .prompt([
+            {
+                name: "first_name",
+                type: "input",
+                message: "What is employee's first name?"
+            },
+            {
+                name: "last_name",
+                type: "input",
+                message: "What is employee's last name?"
+            },
+            {
+                name: "role",
+                type: "list",
+                message: "What is employee's role?",
+                choice: function () {
+                    let roleArray = results[0].map(role => role.title);
+                    return roleArray;
+                },
+
+            },
+            {
+                name: "manager",
+                type: 'list',
+                message: "Who is employee's manager?",
+                choice: function () {
+                    let managerArray = results[0].map(manager => manager.full_name);
+                    return managerArray;
+                },
+
+            }
+
+        ])
+        .then(function (answer) {
+            // when finished prompting, insert a new item into the db with that info
+            connection.query(
+                "INSERT INTO employee SET ?",
+                {
+                    first_name: answer.first_name,
+                    last_name: answer.last_name,
+                    role_id: answer.role_id,
+                    manager_id: answer.manager_id,
+                },
+                function (err) {
+                    if (err) throw err;
+                    console.log("The employess was added successfully!");
+                    // re-prompt the user for if they want to bid or post
+                    createTracker();
+                }
+            );
+        });
+
+}
 
 
 // Add department, roles, employees
