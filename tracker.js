@@ -112,58 +112,61 @@ function viewRoles() {
 
 function addEmployee() {
 
-    inquirer
-        .prompt([
-            {
-                name: "first_name",
-                type: "input",
-                message: "What is employee's first name?"
-            },
-            {
-                name: "last_name",
-                type: "input",
-                message: "What is employee's last name?"
-            },
-            {
-                name: "role",
-                type: "list",
-                message: "What is employee's role?",
-                choice: function () {
-                    let roleArray = results[0].map(role => role.title);
-                    return roleArray;
-                },
+    connection.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
+        if (err) throw err;
 
-            },
-            {
-                name: "manager",
-                type: 'list',
-                message: "Who is employee's manager?",
-                choice: function () {
-                    let managerArray = results[0].map(manager => manager.full_name);
-                    return managerArray;
-                },
-
-            }
-
-        ])
-        .then(function (answer) {
-            // when finished prompting, insert a new item into the db with that info
-            connection.query(
-                "INSERT INTO employee SET ?",
+        inquirer
+            .prompt([
                 {
-                    first_name: answer.first_name,
-                    last_name: answer.last_name,
-                    role_id: answer.role_id,
-                    manager_id: answer.manager_id,
+                    name: "first_name",
+                    type: "input",
+                    message: "What is employee's first name?"
                 },
-                function (err) {
-                    if (err) throw err;
-                    console.log("The employess was added successfully!");
-                    // re-prompt the user for if they want to bid or post
-                    createTracker();
+                {
+                    name: "last_name",
+                    type: "input",
+                    message: "What is employee's last name?"
+                },
+                {
+                    name: "role",
+                    type: "list",
+                    message: "What is employee's role?",
+                    choices: function () {
+                        console.log(results);
+
+                        let choiceArray = results.map(choice => choice.title);
+                        return choiceArray;
+                    },
+                },
+
+
+                {
+                    name: "manager",
+                    type: 'list',
+                    message: "Who is employee's manager?",
+                    choices: function () {
+                        let managerArray = results.map(manager => manager.full_name);
+                        return managerArray;
+                    },
+
                 }
-            );
-        });
+
+            ])
+            .then(function (answer) {
+                // when finished prompting, insert a new item into the db with that info
+                console.log(answer);
+                connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID})`, (err) => {
+                    if (err) return err;
+
+                    // Confirm employee has been added
+                    console.log(`\n EMPLOYEE ${answer.firstName} ${answer.lastName} ADDED...\n `);
+                    createTracker();
+                });
+
+
+            });
+    });
 
 }
 
@@ -171,7 +174,6 @@ function addEmployee() {
 // Add department, roles, employees
 
 
-// view departments, roles, employees
 
 
 
