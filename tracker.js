@@ -31,8 +31,9 @@ function createTracker() {
             message: "What would you like to do?",
             choices: [
                 "VIEW all employees", "VIEW departments", "VIEW roles",
-                "ADD employee", "ADD department", "ADD role",
+                "ADD employee",
                 "UPDATE employee roles",
+                "DELETE employee",
                 "EXIT"
             ]
         })
@@ -54,11 +55,10 @@ function createTracker() {
                     addEmployee();
                     break;
 
-                
                 case "UPDATE employee roles":
                     updateRoles();
                     break;
-                
+
                 case "DELETE employee":
                     deleteEmployee();
                     break;
@@ -161,6 +161,8 @@ function addEmployee() {
                         createTracker();
                     });
 
+                    
+
                 });
 
         })
@@ -205,21 +207,21 @@ function updateRoles() {
                 .then(function (answer) {
                     // when finished prompting, insert a new item into the db with that info
                     console.log(answer);
-                  
+
                     connection.query(
                         `UPDATE employee 
                         SET role_id = (SELECT id FROM role WHERE title = ? ) 
                         WHERE id = (SELECT id FROM(SELECT id FROM employee WHERE CONCAT(first_name," ",last_name) = ?) AS tmptable)`
                         , [answer.role, answer.employee], (err) => {
-                        if (err) throw err;
-                      
+                            if (err) throw err;
 
-                        // confirm update employee
-                        console.log(`\n "${answer.employee}" ROLE UPDATED TO "${answer.role}"...\n `);
 
-                        // back to main menu
-                        createTracker();
-                    });
+                            // confirm update employee
+                            console.log(`\n "${answer.employee}" ROLE UPDATED TO "${answer.role}"...\n `);
+
+                            // back to main menu
+                            createTracker();
+                        });
                 });
 
 
@@ -231,7 +233,6 @@ function updateRoles() {
 
 
 function deleteEmployee() {
-    
     connection.query("SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, role.id, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
         if (err) throw err;
         connection.query("SELECT role.id, role.title from role", (err, role) => {
@@ -255,32 +256,33 @@ function deleteEmployee() {
                         message: "What is employee's roleID?",
                         choices: function () {
                             // console.log(results);
-                            let choiceArray = role.map(role => role.id);
+                            let choiceArray = results.map(role => role.id);
                             return choiceArray;
                         },
                     },
 
-                    {
-                        name: "manager",
-                        type: 'list',
-                        message: "Who is employee's managerID?",
-                        choices: function () {
-                            let managerArray = results.map(employee => employee.id);
-                            return managerArray;
-                        },
-
-                    }
 
                 ])
                 .then(function (answer) {
+                    // console.log(answer);
                     // when finished prompting, insert a new item into the db with that info
-                    console.log(answer);
-                    connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                    VALUES ("${answer.first_name}", "${answer.last_name}", "${answer.role}", "${answer.manager}")`, (err) => {
-                        if (err) console.log(err);
+                    // console.log(answer);
+                    // connection.query (`DELETE FROM employees where ?`, { id: answer.role }, (err) => {
+                    //     if (err) console.log(err);
 
-                        // Confirm employee has been added
-                        console.log(`\n EMPLOYEE ${answer.first_name}, ${answer.last_name} ADDED...\n `);
+                    //     // Confirm employee has been added
+                    //     console.log(`\n EMPLOYEE ${answer.first_name}, ${answer.last_name} DELETED...\n `);
+                    //     createTracker();
+                    // });
+
+                    connection.query(`DELETE FROM employee WHERE id=${answer.role}`, (err) => {
+                        if(err) return err;
+                        console.log(answer);
+
+                        // confirm deleted employee
+                        console.log(`\n EMPLOYEE '${answer.first_name}' DELETED...\n `);
+                        
+                        // back to main menu
                         createTracker();
                     });
 
@@ -292,7 +294,57 @@ function deleteEmployee() {
 
 
 
+
 }
+
+//     connection.query("SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, role.id, role.title, concat(employee.first_name, ' ' ,  employee.last_name) AS full_name FROM employee INNER JOIN role ON employee.role_id=role.id", (err, results) => {
+//         if (err) throw err;
+//         connection.query("SELECT role.id, role.title from role", (err, role) => {
+//             if (err) throw err;
+//             // console.log(role);
+//             inquirer
+//                 .prompt([
+//                     {
+//                         name: "first_name",
+//                         type: "input",
+//                         message: "What is employee's first name?"
+//                     },
+//                     {
+//                         name: "last_name",
+//                         type: "input",
+//                         message: "What is employee's last name?"
+//                     },
+//                     {
+//                         name: "role",
+//                         type: "list",
+//                         message: "What is employee's roleID?",
+//                         choices: function () {
+//                             // console.log(results);
+//                             let choiceArray = role.map(role => role.id);
+//                             return choiceArray;
+//                         },
+//                     },
+
+//                 ])
+//                 .then(function (answer) {
+//                     // when finished prompting, insert a new item into the db with that info
+//                     console.log(answer);
+//                     connection.query(`DELETE FROM employees where ?`, { id: answer.role }
+//                         , (err) => {
+//                             if (err) console.log(err);
+
+//                             // Confirm employee has been added
+//                             console.log(`\n EMPLOYEE ${answer.first_name}, ${answer.last_name} DELETED...\n `);
+//                             createTracker();
+//                         }
+
+                    
+//                 });
+
+//         });
+//     });
+
+// }
 
 
 
