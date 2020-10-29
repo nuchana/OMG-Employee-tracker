@@ -11,7 +11,7 @@ A solution for managing a company's employees using node, inquirer, and MySQL
 
 # Example of my app functionality
 
-![Employee Tracker](Assets/employee-tracker.gif)
+![Employee Tracker](Assets/OMG_tracker.gif)
 
 # What I Learned
 
